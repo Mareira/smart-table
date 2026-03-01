@@ -1,34 +1,27 @@
 import { createComparison, defaultRules } from "../lib/compare.js";
 
 // @todo: #4.3 — настроить компаратор
+// defaultRules уже содержит 'arrayAsRange'!
 const compare = createComparison(defaultRules);
 
 export function initFiltering(elements, indexes) {
   // @todo: #4.1 — заполнить выпадающие списки опциями
-  Object.keys(indexes) // Получаем ключи из объекта
+  Object.keys(indexes)
     .forEach((elementName) => {
-      // Перебираем по именам
       elements[elementName].append(
-        // в каждый элемент добавляем опции
-        ...Object.values(indexes[elementName]) // формируем массив имён, значений опций
+        ...Object.values(indexes[elementName])
           .map((name) => {
-            // используйте name как значение и текстовое содержимое
             const option = document.createElement("option");
             option.value = name;
             option.textContent = name;
-            return option; // @todo: создать и вернуть тег опции
+            return option;
           }),
       );
     });
 
   return (data, state, action) => {
     // @todo: #4.2 — обработать очистку поля
-    if (
-      action &&
-      action.name === "clear" &&
-      action.dataset &&
-      action.dataset.field
-    ) {
+    if (action && action.name === "clear" && action.dataset && action.dataset.field) {
       const parent = action.parentElement;
       let input = null;
 
@@ -36,13 +29,23 @@ export function initFiltering(elements, indexes) {
         input = parent.querySelector("input");
       }
 
-      input.value = "";
+      if (input) {
+        input.value = "";
+      }
 
       const fieldName = action.dataset.field;
       state[fieldName] = "";
     }
 
     // @todo: #4.5 — отфильтровать данные используя компаратор
-    return data.filter(row => compare(row, state));
+    
+    // Создаем копию state с преобразованием totalFrom/totalTo в массив
+    const enhancedState = {
+      ...state,
+      // Преобразуем два поля в массив для правила arrayAsRange
+      total: [state.totalFrom, state.totalTo]
+    };
+
+    return data.filter(row => compare(row, enhancedState));
   };
 }
